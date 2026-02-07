@@ -474,7 +474,7 @@ export default function DedemanScanner() {
       >
         {/* HEADER */}
         <header
-          className={`p-3 sticky top-0 z-20 shadow-md transition-colors ${
+          className={`w-md p-3 sticky top-0 z-20 shadow-md transition-colors ${
             isDarkMode ? "bg-orange-700" : "bg-orange-600"
           }`}
         >
@@ -612,7 +612,7 @@ export default function DedemanScanner() {
 
           {/* RADAR LOADING SCREEN */}
           {loading && image && (
-            <div className="mt-6 relative w-full h-96 bg-black rounded-2xl overflow-hidden shadow-2xl border-4 border-orange-500 fade-in flex flex-col">
+            <div className="flex justify-center items-center p-6 mt-6 gap-2 relative w-full h-96 bg-black rounded-2xl overflow-hidden shadow-2xl border-4 border-orange-500 fade-in flex-col">
               <div className="absolute inset-0 z-0">
                 <img
                   src={image || ""}
@@ -623,8 +623,8 @@ export default function DedemanScanner() {
                 <div className="scan-line"></div>
               </div>
 
-              <div className="z-10 relative flex flex-col justify-between h-full p-6">
-                <div className="flex justify-between items-start">
+              <div className="z-10 relative flex flex-col justify-between h-full w-full ">
+                <div className="flex justify-between items-start ">
                   <div className="text-orange-400 font-mono text-xs flex items-center gap-2 bg-black/60 backdrop-blur-md p-1.5 px-3 rounded-lg border border-orange-500/30">
                     <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
                     SCANNING...
@@ -945,7 +945,7 @@ export default function DedemanScanner() {
             onClick={() => setIsCompareModalOpen(false)}
           >
             <div
-              className={`w-full max-w-lg max-h-[90vh] rounded-2xl flex flex-col overflow-hidden shadow-2xl transition-colors ${
+              className={`w-full max-w-md max-h-[90vh] rounded-2xl flex flex-col overflow-hidden shadow-2xl transition-colors ${
                 isDarkMode ? "bg-gray-800" : "bg-white"
               }`}
               onClick={(e) => e.stopPropagation()}
