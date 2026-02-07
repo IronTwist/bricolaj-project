@@ -16,6 +16,11 @@ export const metadata: Metadata = {
   title: "DedeHelpAi",
   description: "Created by Razvan for Dedeman 2026",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/icons/icon-192x192.png",
+    shortcut: "/icons/icon-192x192.png",
+    apple: "/icons/icon-192x192.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
