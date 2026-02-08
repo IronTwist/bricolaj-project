@@ -482,7 +482,7 @@ export default function DedemanScanner() {
       >
         {/* HEADER */}
         <header
-          className={`max-w-md mx-auto p-3 sticky top-0 z-20 shadow-md transition-colors ${
+          className={`max-w-screen w-md p-3 sticky top-0 z-20 shadow-md transition-colors ${
             isDarkMode ? "bg-orange-700" : "bg-orange-600"
           }`}
         >
