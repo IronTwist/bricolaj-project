@@ -1160,14 +1160,14 @@ export default function DedemanScanner() {
 
                       {/* Diferente */}
                       <div className="mb-4">
-                        <h4 className="text-xs font-bold text-purple-600 uppercase mb-2">
+                        <h4 className="text-sm font-bold text-purple-600 uppercase mb-2">
                           Diferențe Cheie
                         </h4>
                         <ul className="space-y-2">
                           {compareResult.diferente?.map((d, i) => (
                             <li
                               key={i}
-                              className={`text-xs p-2 rounded border ${
+                              className={`text-sm p-2 rounded border ${
                                 isDarkMode
                                   ? "bg-purple-900/20 text-purple-200 border-purple-800"
                                   : "bg-purple-50 text-purple-900 border-purple-100"
@@ -1196,7 +1196,7 @@ export default function DedemanScanner() {
                             Avantaj A
                           </p>
                           <p
-                            className={`text-xs ${
+                            className={`text-sm ${
                               isDarkMode ? "text-gray-300" : "text-gray-700"
                             }`}
                           >
@@ -1218,7 +1218,7 @@ export default function DedemanScanner() {
                             Avantaj B
                           </p>
                           <p
-                            className={`text-xs text-right ${
+                            className={`text-sm text-right ${
                               isDarkMode ? "text-gray-300" : "text-gray-700"
                             }`}
                           >
@@ -1242,14 +1242,14 @@ export default function DedemanScanner() {
                         />
                         <div>
                           <p
-                            className={`text-xs font-bold mb-1 ${
+                            className={`text-sm font-bold mb-1 ${
                               isDarkMode ? "text-white" : "text-gray-800"
                             }`}
                           >
                             Concluzie Expert
                           </p>
                           <p
-                            className={`text-xs ${
+                            className={`text-sm ${
                               isDarkMode ? "text-gray-300" : "text-gray-600"
                             }`}
                           >
