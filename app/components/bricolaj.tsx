@@ -476,13 +476,13 @@ export default function DedemanScanner() {
       `}</style>
 
       <div
-        className={`min-h-screen font-sans pb-2 transition-colors duration-300 ${
+        className={`min-h-screen max-w-screen mx-auto font-sans pb-2 transition-colors duration-300 ${
           isDarkMode ? "bg-gray-900 text-gray-100" : "bg-gray-50 text-gray-800"
         }`}
       >
         {/* HEADER */}
         <header
-          className={`w-md p-3 sticky top-0 z-20 shadow-md transition-colors ${
+          className={`max-w-md mx-auto p-3 sticky top-0 z-20 shadow-md transition-colors ${
             isDarkMode ? "bg-orange-700" : "bg-orange-600"
           }`}
         >
