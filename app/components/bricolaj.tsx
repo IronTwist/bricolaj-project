@@ -33,6 +33,7 @@ import {
 import { analizeImage } from "../api/analyze-image";
 import { analyzeComparisonApi } from "../api/analyze-comparison";
 import { chatApi } from "../api/chat";
+import Image from "next/image";
 
 // --- Tipuri de Date ---
 
@@ -69,38 +70,45 @@ interface ChatMessage {
 // --- Componente UI ---
 
 const DedemanLogo = () => (
-  <svg
-    width="40"
-    height="40"
-    viewBox="0 0 40 40"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    className="shrink-0 shadow-sm rounded-full"
-  >
-    <circle cx="20" cy="20" r="20" fill="white" />
-    <path
-      d="M10 32C10 27 14 26 20 26C26 26 30 27 30 32V36H10V32Z"
-      fill="#1E40AF"
-    />
-    <rect x="12" y="14" width="16" height="14" rx="4" fill="#1E40AF" />
-    <path d="M10 14C10 9 14 6 20 6C26 6 30 9 30 14H10Z" fill="#F97316" />
-    <rect
-      x="16"
-      y="5"
-      width="8"
-      height="2"
-      rx="1"
-      fill="#FFEDD5"
-      fillOpacity="0.8"
-    />
-    <line x1="20" y1="6" x2="20" y2="3" stroke="#94A3B8" strokeWidth="2" />
-    <circle cx="20" cy="3" r="1.5" fill="#EF4444" />
-    <circle cx="16" cy="20" r="2" fill="white" />
-    <circle cx="24" cy="20" r="2" fill="white" />
-    <circle cx="16" cy="20" r="1" fill="#3B82F6" />
-    <circle cx="24" cy="20" r="1" fill="#3B82F6" />
-    <rect x="18" y="24" width="4" height="1.5" rx="0.5" fill="#93C5FD" />
-  </svg>
+  // <svg
+  //   width="40"
+  //   height="40"
+  //   viewBox="0 0 40 40"
+  //   fill="none"
+  //   xmlns="http://www.w3.org/2000/svg"
+  //   className="shrink-0 shadow-sm rounded-full"
+  // >
+  //   <circle cx="20" cy="20" r="20" fill="white" />
+  //   <path
+  //     d="M10 32C10 27 14 26 20 26C26 26 30 27 30 32V36H10V32Z"
+  //     fill="#1E40AF"
+  //   />
+  //   <rect x="12" y="14" width="16" height="14" rx="4" fill="#1E40AF" />
+  //   <path d="M10 14C10 9 14 6 20 6C26 6 30 9 30 14H10Z" fill="#F97316" />
+  //   <rect
+  //     x="16"
+  //     y="5"
+  //     width="8"
+  //     height="2"
+  //     rx="1"
+  //     fill="#FFEDD5"
+  //     fillOpacity="0.8"
+  //   />
+  //   <line x1="20" y1="6" x2="20" y2="3" stroke="#94A3B8" strokeWidth="2" />
+  //   <circle cx="20" cy="3" r="1.5" fill="#EF4444" />
+  //   <circle cx="16" cy="20" r="2" fill="white" />
+  //   <circle cx="24" cy="20" r="2" fill="white" />
+  //   <circle cx="16" cy="20" r="1" fill="#3B82F6" />
+  //   <circle cx="24" cy="20" r="1" fill="#3B82F6" />
+  //   <rect x="18" y="24" width="4" height="1.5" rx="0.5" fill="#93C5FD" />
+  // </svg>
+  <Image
+    src={"/homeLogoWhiteBg.png"}
+    alt=""
+    width={38}
+    height={38}
+    className=""
+  />
 );
 
 export default function DedemanScanner() {
@@ -523,7 +531,7 @@ export default function DedemanScanner() {
           {/* ECRAN INITIAL */}
           {!image && (
             <div
-              className={`p-8 rounded-2xl shadow-lg border text-center mt-6 fade-in transition-colors ${
+              className={`p-8 rounded-2xl shadow-lg border text-center fade-in transition-colors ${
                 isDarkMode
                   ? "bg-gray-800 border-gray-700"
                   : "bg-white border-gray-100"
@@ -534,9 +542,16 @@ export default function DedemanScanner() {
                   isDarkMode ? "bg-blue-900/30" : "bg-blue-50"
                 }`}
               >
-                <Camera
+                {/* <Camera
                   size={48}
                   className={isDarkMode ? "text-blue-400" : "text-blue-600"}
+                /> */}
+                <Image
+                  src={"/homeLogo.png"}
+                  alt=""
+                  width={180}
+                  height={180}
+                  className=""
                 />
               </div>
               <h2
@@ -551,7 +566,8 @@ export default function DedemanScanner() {
                   isDarkMode ? "text-gray-400" : "text-gray-500"
                 }`}
               >
-                Alege cum vrei să încarci imaginea produsului de la raft.
+                Alege cum vrei să încarci imaginea produsului de la raft pentru
+                a fi scanat.
               </p>
 
               <div className="flex flex-col gap-3">
