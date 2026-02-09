@@ -193,7 +193,18 @@ export default function DedemanScanner() {
     try {
       const file = event.target.files?.[0];
       if (file) {
-        const base64 = await convertFileToBase64(file);
+        const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+          const img = document.createElement("img") as HTMLImageElement;
+          img.onload = () => resolve(img);
+          img.onerror = reject;
+          img.src = URL.createObjectURL(file);
+        });
+        const canvas = document.createElement("canvas");
+        canvas.width = 1024;
+        canvas.height = 1024;
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(image, 0, 0, 1024, 1024);
+        const base64 = canvas.toDataURL("image/jpeg");
         setImage(base64);
         analyzeImage(base64);
       }
@@ -346,11 +357,28 @@ export default function DedemanScanner() {
               ],
             },
           ],
+          // Elimină logica de gândire prin instrucțiuni clare
+          systemInstruction: {
+            parts: [
+              {
+                text: "Răspunde scurt, tehnic",
+              },
+            ],
+          },
         };
       } else {
         prompt = `Ești un asistent virtual expert pentru magazinul Dedeman România. Răspunde la întrebarea utilizatorului despre bricolaj, construcții sau produse.
         Întrebare: "${userMessage}". Răspunde politicos, scurt și oferă sfaturi tehnice dacă este cazul.`;
-        payload = { contents: [{ parts: [{ text: prompt }] }] };
+        payload = {
+          contents: [{ parts: [{ text: prompt }] }], // Elimină logica de gândire prin instrucțiuni clare
+          systemInstruction: {
+            parts: [
+              {
+                text: "Răspunde politicos, scurt, oferă sfaturi tehnice dacă este cazul.",
+              },
+            ],
+          },
+        };
       }
 
       const data = await chatApi(payload);
