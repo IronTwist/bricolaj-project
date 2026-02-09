@@ -34,6 +34,7 @@ import { analizeImage } from "../api/analyze-image";
 import { analyzeComparisonApi } from "../api/analyze-comparison";
 import { chatApi } from "../api/chat";
 import Image from "next/image";
+import Link from "next/link";
 
 // --- Tipuri de Date ---
 
@@ -194,23 +195,49 @@ export default function DedemanScanner() {
       const file = event.target.files?.[0];
       if (file) {
         const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-          const img = document.createElement("img") as HTMLImageElement;
+          const img = document.createElement("img"); // Mai curat decât document.createElement
           img.onload = () => resolve(img);
           img.onerror = reject;
           img.src = URL.createObjectURL(file);
         });
+
         const canvas = document.createElement("canvas");
-        canvas.width = 1024;
-        canvas.height = 1024;
         const ctx = canvas.getContext("2d");
-        ctx?.drawImage(image, 0, 0, 1024, 1024);
-        const base64 = canvas.toDataURL("image/jpeg");
+
+        const MAX_SIZE = 1024;
+        let width = image.width;
+        let height = image.height;
+
+        // Calculăm proporțiile corecte
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height *= MAX_SIZE / width;
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width *= MAX_SIZE / height;
+            height = MAX_SIZE;
+          }
+        }
+
+        // Setează dimensiunea canvas-ului la dimensiunea calculată (nu fix 1024x1024)
+        canvas.width = width;
+        canvas.height = height;
+
+        ctx?.drawImage(image, 0, 0, width, height);
+
+        // Comprimăm la 0.7 pentru a economisi tokeni, așa cum am discutat
+        const base64 = canvas.toDataURL("image/jpeg", 0.7);
+
         setImage(base64);
         analyzeImage(base64);
+
+        // Curățăm URL-ul creat pentru a elibera memoria
+        URL.revokeObjectURL(image.src);
       }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
-      setError("Nu s-a putut încărca imaginea.");
+      setError("Nu s-a putut încărca sau optimiza imaginea.");
     }
   };
 
@@ -368,7 +395,7 @@ export default function DedemanScanner() {
         };
       } else {
         prompt = `Ești un asistent virtual expert pentru magazinul Dedeman România. Răspunde la întrebarea utilizatorului despre bricolaj, construcții sau produse.
-        Întrebare: "${userMessage}". Răspunde politicos, scurt și oferă sfaturi tehnice dacă este cazul.`;
+        Întrebare: "${userMessage}".`;
         payload = {
           contents: [{ parts: [{ text: prompt }] }], // Elimină logica de gândire prin instrucțiuni clare
           systemInstruction: {
@@ -515,17 +542,18 @@ export default function DedemanScanner() {
           }`}
         >
           <div className="max-w-md mx-auto flex justify-between items-center">
-            <a
-              href="https://www.dedeman.ro"
-              target="_blank"
+            <Link
+              href="/"
+              target="_self"
               rel="noopener noreferrer"
               className="flex items-center gap-3 no-underline text-white hover:opacity-90 transition-opacity"
+              onClick={resetScanner}
             >
               <DedemanLogo />
               <h1 className="text-xl font-bold tracking-tight text-white">
                 DedeHelp AI
               </h1>
-            </a>
+            </Link>
 
             <div className="flex gap-2 items-center">
               <button
@@ -1266,7 +1294,7 @@ export default function DedemanScanner() {
                           className={
                             isDarkMode ? "text-green-400" : "text-green-600"
                           }
-                          shrink-0
+                          shrink-0="true"
                         />
                         <div>
                           <p
