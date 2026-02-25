@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     }
 
     const base64Data = base64Image.split(",")[1];
-    const mimeType = base64Image.split(";")[0].split(":")[1];
+    const mimeType = base64Image.split(":")[1].split(";")[0];
 
     const prompt = `Ești un consultant Dedeman expert. Identifică produsul din imagine. Dacă nu e produs de bricolaj, valid_product=false. Altfel, completează schema. Fără coduri SAP inventate.`;
 
@@ -73,10 +73,12 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const error = await response.json();
+      console.error("Google API error:", error);
       return NextResponse.json(error, { status: response.status });
     }
 
     const data = await response.json();
+    console.log("Analyze image success:", JSON.stringify(data, null, 2));
     return NextResponse.json(data);
   } catch (error) {
     console.error("Analyze image error:", error);

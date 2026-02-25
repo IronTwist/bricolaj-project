@@ -12,6 +12,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Extract base64 and mime type from data URIs
+    const extractBase64 = (dataUri: string) => dataUri.split(",")[1];
+    const extractMimeType = (dataUri: string) => dataUri.split(":")[1].split(";")[0];
+    
+    const base64_data1 = extractBase64(data1);
+    const mimeType1 = extractMimeType(data1);
+    const base64_data2 = extractBase64(data2);
+    const mimeType2 = extractMimeType(data2);
+
     const prompt = `
     Compară aceste două produse din punct de vedere tehnic, ca un expert Dedeman.
     1. Identifică Produsul A și Produsul B.
@@ -42,8 +51,8 @@ export async function POST(request: NextRequest) {
             {
               parts: [
                 { text: prompt },
-                { inlineData: { mimeType: mime1, data: data1 } },
-                { inlineData: { mimeType: mime2, data: data2 } },
+                { inlineData: { mimeType: mimeType1, data: base64_data1 } },
+                { inlineData: { mimeType: mimeType2, data: base64_data2 } },
               ],
             },
           ],
