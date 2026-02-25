@@ -312,7 +312,9 @@ export default function DedemanScanner() {
 
     try {
       const data = await analizeImage(base64Image, controller);
+      console.log("analyzeImage callback - received data:", data);
       const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      console.log("Extracted text response:", textResponse);
       if (!textResponse) throw new Error("Date invalide.");
 
       const parsedResult = JSON.parse(

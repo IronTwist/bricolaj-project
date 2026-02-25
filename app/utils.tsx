@@ -10,10 +10,14 @@ export const analizeImage = async (
   });
 
   if (!response.ok) {
+    const error = await response.json();
+    console.error("API /analyze-image error:", error);
     throw new Error("Eroare API.");
   }
 
-  return response.json();
+  const data = await response.json();
+  console.log("API /analyze-image response:", data);
+  return data;
 };
 
 export const analyzeComparisonApi = async (
