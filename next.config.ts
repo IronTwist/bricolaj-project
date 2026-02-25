@@ -12,7 +12,7 @@ const withPWA = withPWAInit({
 const nextConfig: NextConfig = {
   /* config options here */
   env: {
-    NEXT_AI_API_KEY: process.env.NEXT_AI_API_KEY || "",
+
   },
   transpilePackages: ["@ducanh2912/next-pwa"],
   turbopack: {
