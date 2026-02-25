@@ -30,11 +30,10 @@ import {
   ArrowRightLeft,
   CheckCircle2,
 } from "lucide-react";
-import { analizeImage } from "../api/analyze-image";
-import { analyzeComparisonApi } from "../api/analyze-comparison";
-import { chatApi } from "../api/chat";
+import { analizeImage, analyzeComparisonApi, chatApi } from "../utils";
 import Image from "next/image";
 import Link from "next/link";
+import { SecondaryAppShell } from "./secondary-app-shell";
 
 // --- Tipuri de Date ---
 
@@ -67,6 +66,8 @@ interface ChatMessage {
   role: "user" | "model";
   text: string;
 }
+
+type AppMode = "scanner" | "secondary";
 
 // --- Componente UI ---
 
@@ -122,6 +123,7 @@ export default function DedemanScanner() {
   // Inițializare temă (Safe for SSR)
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [activeAppMode, setActiveAppMode] = useState<AppMode>("scanner");
 
   useEffect(() => {
     setMounted(true);
@@ -141,7 +143,7 @@ export default function DedemanScanner() {
   const [compareImg1, setCompareImg1] = useState<string | null>(null);
   const [compareImg2, setCompareImg2] = useState<string | null>(null);
   const [compareResult, setCompareResult] = useState<CompareResult | null>(
-    null
+    null,
   );
   const [compareLoading, setCompareLoading] = useState(false);
 
@@ -177,6 +179,18 @@ export default function DedemanScanner() {
     localStorage.setItem("dedehelp_theme", newTheme ? "dark" : "light");
   };
 
+  const toggleAppMode = () => {
+    setActiveAppMode((prev) => (prev === "scanner" ? "secondary" : "scanner"));
+  };
+
+  useEffect(() => {
+    if (activeAppMode === "secondary") {
+      setIsModalOpen(false);
+      setIsChatOpen(false);
+      setIsCompareModalOpen(false);
+    }
+  }, [activeAppMode]);
+
   // --- Helpers ---
 
   const convertFileToBase64 = (file: File): Promise<string> => {
@@ -189,7 +203,7 @@ export default function DedemanScanner() {
   };
 
   const handleImageUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>
+    event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     try {
       const file = event.target.files?.[0];
@@ -236,14 +250,14 @@ export default function DedemanScanner() {
         // Curățăm URL-ul creat pentru a elibera memoria
         URL.revokeObjectURL(image.src);
       }
-    } catch (e) {
+    } catch {
       setError("Nu s-a putut încărca sau optimiza imaginea.");
     }
   };
 
   const handleCompareUpload = async (
     event: React.ChangeEvent<HTMLInputElement>,
-    slot: 1 | 2
+    slot: 1 | 2,
   ) => {
     try {
       const file = event.target.files?.[0];
@@ -305,7 +319,7 @@ export default function DedemanScanner() {
         textResponse
           .replace(/```json/g, "")
           .replace(/```/g, "")
-          .trim()
+          .trim(),
       );
 
       setProgress(100);
@@ -344,8 +358,8 @@ export default function DedemanScanner() {
           textResponse
             .replace(/```json/g, "")
             .replace(/```/g, "")
-            .trim()
-        )
+            .trim(),
+        ),
       );
     } catch (e) {
       console.error(e);
@@ -432,6 +446,7 @@ export default function DedemanScanner() {
 
   // Nu randa nimic până nu suntem pe client (previne hydration mismatch pt dark mode)
   if (!mounted) return null;
+  const isScannerApp = activeAppMode === "scanner";
 
   const ProductItem = ({
     item,
@@ -441,7 +456,7 @@ export default function DedemanScanner() {
     minimal?: boolean;
   }) => {
     const searchUrl = `https://www.dedeman.ro/ro/cautare?q=${encodeURIComponent(
-      item.nume
+      item.nume,
     )}`;
     return (
       <div
@@ -557,13 +572,30 @@ export default function DedemanScanner() {
 
             <div className="flex gap-2 items-center">
               <button
+                onClick={toggleAppMode}
+                className={`flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold transition active:scale-95 text-white ${
+                  isScannerApp
+                    ? "bg-orange-700/80 hover:bg-orange-700"
+                    : "bg-blue-700/90 hover:bg-blue-700"
+                }`}
+                aria-label="Comută între aplicații"
+                title={
+                  isScannerApp
+                    ? "Comută la SeCam"
+                    : "Înapoi la DedeHelp"
+                }
+              >
+                <ArrowRightLeft size={14} />
+                {isScannerApp ? "SeCam" : "DedeHelp"}
+              </button>
+              <button
                 onClick={toggleTheme}
                 className="bg-orange-700/80 p-2 rounded-full hover:bg-orange-700 transition active:scale-95 text-white mr-1"
               >
                 {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
               </button>
 
-              {image && !loading && (
+              {isScannerApp && image && !loading && (
                 <>
                   <button
                     onClick={resetScanner}
@@ -584,6 +616,8 @@ export default function DedemanScanner() {
         </header>
 
         <main className="max-w-md mx-auto p-4 min-h-[85vh]">
+          {isScannerApp ? (
+            <>
           {/* ECRAN INITIAL */}
           {!image && (
             <div
@@ -804,7 +838,7 @@ export default function DedemanScanner() {
                   <h2 className="text-white font-bold text-lg leading-tight">
                     <a
                       href={`https://www.dedeman.ro/ro/cautare?q=${encodeURIComponent(
-                        result.nume_produs
+                        result.nume_produs,
                       )}`}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -988,8 +1022,14 @@ export default function DedemanScanner() {
               </div>
             </div>
           )}
+            </>
+          ) : (
+            <SecondaryAppShell isDarkMode={isDarkMode} />
+          )}
         </main>
 
+        {isScannerApp && (
+          <>
         <footer
           className={`text-center p-4 text-xs pb-8 transition-colors flex items-center justify-center gap-2 ${
             isDarkMode ? "text-gray-500" : "text-gray-400"
@@ -1450,8 +1490,8 @@ export default function DedemanScanner() {
                       msg.role === "user"
                         ? "bg-orange-600 text-white rounded-br-none"
                         : isDarkMode
-                        ? "bg-gray-800 text-gray-100 border border-gray-700 rounded-bl-none"
-                        : "bg-white text-gray-800 border border-gray-200 rounded-bl-none shadow-sm"
+                          ? "bg-gray-800 text-gray-100 border border-gray-700 rounded-bl-none"
+                          : "bg-white text-gray-800 border border-gray-200 rounded-bl-none shadow-sm"
                     }`}
                   >
                     {msg.text}
@@ -1493,6 +1533,8 @@ export default function DedemanScanner() {
               </button>
             </form>
           </div>
+        )}
+          </>
         )}
       </div>
     </div>
