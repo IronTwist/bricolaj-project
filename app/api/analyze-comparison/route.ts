@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   try {
-    const { mime1, data1, mime2, data2 } = await request.json();
+    const { data1, data2 } = await request.json();
 
     const apiKey = process.env.AI_API_KEY;
     if (!apiKey) {
