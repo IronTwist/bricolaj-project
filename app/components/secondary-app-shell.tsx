@@ -137,6 +137,10 @@ export function SecondaryAppShell({
   const signalingUnsubRef = useRef<(() => void) | null>(null);
   const metadataUnsubRef = useRef<(() => void) | null>(null);
   const objectUrlsRef = useRef<string[]>([]);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reconnectAttemptsRef = useRef<number>(0);
+  const maxReconnectAttemptsRef = useRef<number>(5);
+  const remoteMediaRecorderRef = useRef<MediaRecorder | null>(null);
 
   const rtcProcessed = useRef<{
     offerId: number | null;
@@ -226,8 +230,33 @@ export function SecondaryAppShell({
       mediaRecorderRef.current &&
       mediaRecorderRef.current.state !== "inactive"
     ) {
-      mediaRecorderRef.current.stop();
+      // Flush remaining data before stopping
+      mediaRecorderRef.current.requestData();
+      await new Promise((resolve) => {
+        const tempRef = mediaRecorderRef.current;
+        if (tempRef) {
+          const handler = () => {
+            tempRef.removeEventListener("stop", handler);
+            resolve(null);
+          };
+          tempRef.addEventListener("stop", handler);
+          tempRef.stop();
+        } else {
+          resolve(null);
+        }
+      });
     }
+    
+    // Clean up remote recorder
+    if (
+      remoteMediaRecorderRef.current &&
+      remoteMediaRecorderRef.current.state !== "inactive"
+    ) {
+      remoteMediaRecorderRef.current.requestData();
+      remoteMediaRecorderRef.current.stop();
+    }
+    remoteMediaRecorderRef.current = null;
+    
     if (pcRef.current) {
       pcRef.current.close();
       pcRef.current = null;
@@ -235,6 +264,10 @@ export function SecondaryAppShell({
     if (heartbeatTimerRef.current) {
       clearInterval(heartbeatTimerRef.current);
       heartbeatTimerRef.current = null;
+    }
+    if (reconnectTimerRef.current) {
+      clearTimeout(reconnectTimerRef.current);
+      reconnectTimerRef.current = null;
     }
 
     if (view === "camera" && dbRef.current && authRef.current?.currentUser) {
@@ -400,11 +433,12 @@ export function SecondaryAppShell({
       });
       mediaRecorderRef.current = recorder;
       recorder.ondataavailable = (event) => {
-        if (event.data.size > 50_000 && idbRef.current) {
+        // Save all chunks, not just > 50KB - prevents data loss
+        if (event.data.size > 10_000 && idbRef.current) {
           const now = Date.now();
           const tx = idbRef.current.transaction("videos", "readwrite");
           tx.objectStore("videos").add({
-            id: `rec_${now}`,
+            id: `rec_${now}_${Math.random()}`,
             timestamp: now,
             data: event.data,
             size: `${(event.data.size / 1048576).toFixed(2)} MB`,
@@ -412,7 +446,8 @@ export function SecondaryAppShell({
           tx.oncomplete = syncLocalHistory;
         }
       };
-      recorder.start(60_000);
+      // Record in smaller chunks (30 seconds instead of 60) to prevent data loss
+      recorder.start(30_000);
 
       setView("camera");
       setStatusMsg("Transmisie Securizata");
@@ -433,6 +468,7 @@ export function SecondaryAppShell({
     rtcProcessed.current = { offerId: null, answerId: null };
     processedOfferCandidatesRef.current.clear();
     cleanupSignaling();
+    reconnectAttemptsRef.current = 0;
 
     try {
       await navigator.mediaDevices
@@ -446,6 +482,7 @@ export function SecondaryAppShell({
       if (remoteVideoRef.current)
         remoteVideoRef.current.srcObject = remoteStream;
 
+      // Setup recording for remote stream
       pc.ontrack = (event) => {
         event.streams[0].getTracks().forEach((track) => {
           const exists = remoteStream
@@ -453,6 +490,34 @@ export function SecondaryAppShell({
             .some((t) => t.id === track.id);
           if (!exists) remoteStream.addTrack(track);
         });
+        
+        // Start recording remote stream when we get the track
+        if (!remoteMediaRecorderRef.current && remoteStream.getTracks().length > 0) {
+          try {
+            remoteMediaRecorderRef.current = new MediaRecorder(remoteStream, {
+              mimeType: "video/webm;codecs=vp8",
+            });
+            remoteMediaRecorderRef.current.ondataavailable = (dataEvent) => {
+              // Save all chunks to prevent data loss
+              if (dataEvent.data.size > 10_000 && idbRef.current) {
+                const now = Date.now();
+                const tx = idbRef.current.transaction("videos", "readwrite");
+                tx.objectStore("videos").add({
+                  id: `rec_remote_${now}_${Math.random()}`,
+                  timestamp: now,
+                  data: dataEvent.data,
+                  size: `${(dataEvent.data.size / 1048576).toFixed(2)} MB`,
+                });
+                tx.oncomplete = syncLocalHistory;
+              }
+            };
+            remoteMediaRecorderRef.current.start(30_000);
+          } catch {
+            console.error("Failed to start remote recording");
+          }
+        }
+        
+        reconnectAttemptsRef.current = 0;
         setConnStatus("LIVE");
         setStatusMsg("Live Feed Motorola");
       };
@@ -525,7 +590,9 @@ export function SecondaryAppShell({
         const isAlive = Date.now() - Number(data.lastPulse || 0) < 15_000;
         if (!isAlive) {
           setConnStatus("DISCONNECTED");
-          setStatusMsg("Sursa Offline (Timeout)");
+          setStatusMsg("Sursa Offline - Reconectare...");
+          // Attempt automatic reconnection
+          void attemptReconnect();
         }
       });
 
@@ -534,6 +601,27 @@ export function SecondaryAppShell({
       setStatusMsg("Eroare initializare monitor");
       setConnStatus("DISCONNECTED");
     }
+  };
+
+  const attemptReconnect = () => {
+    if (reconnectAttemptsRef.current >= maxReconnectAttemptsRef.current) {
+      setStatusMsg("Reconexiune esuata - verifica sursa");
+      return;
+    }
+
+    reconnectAttemptsRef.current += 1;
+    const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current - 1), 30000);
+    
+    if (reconnectTimerRef.current) {
+      clearTimeout(reconnectTimerRef.current);
+    }
+    
+    reconnectTimerRef.current = setTimeout(() => {
+      if (view === "monitor") {
+        setStatusMsg(`Reconectare in curs (${reconnectAttemptsRef.current}/${maxReconnectAttemptsRef.current})...`);
+        void startMonitorNode();
+      }
+    }, delay);
   };
 
   const clearStorage = () => {
