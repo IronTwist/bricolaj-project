@@ -270,7 +270,7 @@ export function SecondaryAppShell({
       reconnectTimerRef.current = null;
     }
 
-    if (view === "camera" && dbRef.current && authRef.current?.currentUser) {
+    if (dbRef.current && authRef.current?.currentUser) {
       const metadataDoc = doc(
         dbRef.current,
         "artifacts",
@@ -285,11 +285,16 @@ export function SecondaryAppShell({
         () => {},
       );
       if (sessionDoc) {
-        await updateDoc(sessionDoc, {
-          status: "DISCONNECTED",
-          offer: null,
-          answer: null,
-        }).catch(() => {});
+        const updates: Record<string, unknown> = { status: "DISCONNECTED" };
+        if (view === "monitor") {
+          // clear remote answer so camera can renegotiate
+          updates.answer = null;
+          updates.answerId = null;
+        } else if (view === "camera") {
+          updates.offer = null;
+          updates.offerId = null;
+        }
+        await updateDoc(sessionDoc, updates).catch(() => {});
       }
     }
 
@@ -372,6 +377,29 @@ export function SecondaryAppShell({
           updateDoc(sessionDoc, {
             offerCandidates: arrayUnion(event.candidate.toJSON()),
           }).catch(() => {});
+        }
+      };
+
+      // if connection drops, generate new offer so monitors can reconnect
+      pc.onconnectionstatechange = async () => {
+        if (
+          pc.connectionState === "disconnected" ||
+          pc.connectionState === "failed"
+        ) {
+          try {
+            const newOffer = await pc.createOffer();
+            await pc.setLocalDescription(newOffer);
+            await updateDoc(sessionDoc, {
+              offer: { sdp: newOffer.sdp, type: newOffer.type },
+              offerId: Date.now(),
+              status: "OFFERED",
+            });
+            // reset processed ids so monitor can answer again
+            rtcProcessed.current.offerId = null;
+            rtcProcessed.current.answerId = null;
+          } catch {
+            // ignore
+          }
         }
       };
 
