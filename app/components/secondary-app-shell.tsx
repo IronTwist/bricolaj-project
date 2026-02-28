@@ -132,6 +132,7 @@ export function SecondaryAppShell({
   const idbRef = useRef<IDBDatabase | null>(null);
   const authRef = useRef<Auth | null>(null);
   const dbRef = useRef<Firestore | null>(null);
+  const viewRef = useRef<AppView>("home");
 
   const heartbeatTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const signalingUnsubRef = useRef<(() => void) | null>(null);
@@ -215,6 +216,48 @@ export function SecondaryAppShell({
       metadataUnsubRef.current();
       metadataUnsubRef.current = null;
     }
+  }
+
+  async function cleanupMonitorTransport() {
+    cleanupSignaling();
+
+    if (reconnectTimerRef.current) {
+      clearTimeout(reconnectTimerRef.current);
+      reconnectTimerRef.current = null;
+    }
+
+    if (
+      remoteMediaRecorderRef.current &&
+      remoteMediaRecorderRef.current.state !== "inactive"
+    ) {
+      remoteMediaRecorderRef.current.requestData();
+      await new Promise((resolve) => {
+        const recorder = remoteMediaRecorderRef.current;
+        if (!recorder) {
+          resolve(null);
+          return;
+        }
+        const onStop = () => {
+          recorder.removeEventListener("stop", onStop);
+          resolve(null);
+        };
+        recorder.addEventListener("stop", onStop);
+        recorder.stop();
+      });
+    }
+    remoteMediaRecorderRef.current = null;
+
+    if (remoteStreamRef.current) {
+      remoteStreamRef.current.getTracks().forEach((track) => track.stop());
+      remoteStreamRef.current = null;
+    }
+
+    if (pcRef.current) {
+      pcRef.current.close();
+      pcRef.current = null;
+    }
+
+    processedOfferCandidatesRef.current.clear();
   }
 
   async function terminateAll() {
@@ -494,14 +537,14 @@ export function SecondaryAppShell({
     setStatusMsg("Sincronizare cu sursa...");
     setConnStatus("NEGOTIATING");
     rtcProcessed.current = { offerId: null, answerId: null };
-    processedOfferCandidatesRef.current.clear();
-    cleanupSignaling();
+    await cleanupMonitorTransport();
     reconnectAttemptsRef.current = 0;
 
     try {
-      await navigator.mediaDevices
+      const probeAudio = await navigator.mediaDevices
         .getUserMedia({ audio: true })
-        .catch(() => {});
+        .catch(() => null);
+      probeAudio?.getTracks().forEach((track) => track.stop());
 
       const pc = new RTCPeerConnection(RTC_CONFIG);
       pcRef.current = pc;
@@ -576,7 +619,6 @@ export function SecondaryAppShell({
 
         if (
           data.offer &&
-          data.status === "OFFERED" &&
           pc.signalingState === "stable" &&
           rtcProcessed.current.offerId !== data.offerId
         ) {
@@ -645,7 +687,7 @@ export function SecondaryAppShell({
     }
     
     reconnectTimerRef.current = setTimeout(() => {
-      if (view === "monitor") {
+      if (viewRef.current === "monitor") {
         setStatusMsg(`Reconectare in curs (${reconnectAttemptsRef.current}/${maxReconnectAttemptsRef.current})...`);
         void startMonitorNode();
       }
@@ -680,6 +722,10 @@ export function SecondaryAppShell({
     );
     setPlayingVideo(null);
   };
+
+  useEffect(() => {
+    viewRef.current = view;
+  }, [view]);
 
   useEffect(() => {
     let authUnsub: (() => void) | null = null;
