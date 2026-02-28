@@ -1,0 +1,34 @@
+# Exclude dependințele (cel mai mare consumator)
+
+node_modules/
+vendor/
+
+# Exclude fișierele de build/output
+
+dist/
+build/
+.next/
+out/
+
+# Exclude fișierele de sistem și log-uri
+
+.git/
+.svn/
+_.log
+_.tmp
+
+# Exclude fișierele media grele (AI-ul nu are ce face cu ele în cod)
+
+_.png
+_.jpg
+_.jpeg
+_.gif
+_.svg
+_.mp4
+\*.pdf
+
+# Exclude fișierele de configurare pe care nu vrei să le modifice
+
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
